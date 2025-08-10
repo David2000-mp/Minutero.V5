@@ -32,4 +32,5 @@ venv/
 Thumbs.db
 
 # Archivos de credenciales de Google
+!vercel.json
 *.json
