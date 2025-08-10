@@ -1,0 +1,167 @@
+:root {
+    --color-black: #191919; --color-orange: #FF4D00; --color-light-gray: #F5F5F5;
+    --color-gray: #D9D9D9; --color-blue: #3498DB; --color-green: #2ECC71;
+}
+body { font-family: 'Lato', sans-serif; background-color: var(--color-light-gray); margin: 0; padding-top: 85px; }
+h1, h2, h3, h4, .logo-text { font-family: 'Montserrat', sans-serif; }
+
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center;
+    align-items: center; z-index: 2000;
+}
+.modal-content {
+    background-color: white; padding: 30px 40px; border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 600px;
+}
+.modal-content h2 { margin-top: 0; }
+#modal-task-list {
+    list-style: none; padding: 0; margin-top: 20px;
+    max-height: 50vh; overflow-y: auto; border: 1px solid var(--color-gray);
+    border-radius: 5px;
+}
+#modal-task-list li {
+    padding: 10px 15px; background-color: #fff; border-bottom: 1px solid #eee;
+    cursor: grab; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+#modal-task-list li:last-child { border-bottom: none; }
+.modal-task-title { flex-grow: 1; }
+.time-input { width: 70px; text-align: right; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; }
+#start-meeting-btn {
+    display: block; width: 100%; padding: 15px; font-family: 'Montserrat', sans-serif;
+    font-size: 1.2em; font-weight: 700; background-color: var(--color-orange);
+    color: var(--color-black); border: none; border-radius: 5px;
+    margin-top: 20px; cursor: pointer;
+}
+
+header {
+    position: fixed; top: 0; left: 0; width: 100%; background-color: var(--color-black);
+    color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000;
+    padding: 15px 30px; box-sizing: border-box; display: flex;
+    justify-content: space-between; align-items: center;
+}
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.logo-container img {
+    height: 40px;
+}
+.logo-text {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: var(--color-orange);
+}
+.header-controls { display: flex; align-items: center; gap: 15px; }
+.header-controls button {
+    font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.9em;
+    padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;
+    background-color: var(--color-gray); color: var(--color-black); transition: all 0.2s;
+}
+.header-controls button:hover { transform: scale(1.05); }
+#export-pdf { background-color: var(--color-orange); }
+#reset-meeting { background-color: #6c757d; color: white; }
+main { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+
+#info-reunion {
+    background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 30px; display: flex; gap: 30px; align-items: flex-start;
+}
+#info-reunion > div { flex: 1; }
+#info-reunion h3 { margin-top: 0; font-size: 1.1em; color: var(--color-black); border-bottom: 2px solid var(--color-light-gray); padding-bottom: 8px; margin-bottom: 15px;}
+#attendees-list { display: flex; flex-wrap: wrap; gap: 15px; padding: 0; }
+.attendee-item { display: flex; align-items: center; }
+.attendee-item input { margin-right: 8px; transform: scale(1.2); }
+
+#agenda-summary {
+    background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 40px;
+}
+#agenda-summary h3 { margin-top: 0; font-size: 1.2em; color: var(--color-black); }
+#agenda-summary ol { padding-left: 20px; margin: 0; }
+#agenda-summary li { margin-bottom: 8px; color: #555; }
+#total-time-container {
+    font-weight: bold; text-align: right; font-size: 1.1em; color: var(--color-blue);
+    margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;
+}
+#total-time-container span { font-weight: normal; color: #333; }
+
+#cronometro-container { text-align: right; display: flex; align-items: center; gap: 10px;}
+#timer-display { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1.5em; color: white; }
+.timer-controls button {
+    padding: 8px 12px; font-size: 0.9em; border: none; border-radius: 5px;
+    background-color: var(--color-gray); color: var(--color-black); cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+.timer-controls button:hover {
+    background-color: var(--color-blue); color: white; transform: scale(1.05);
+}
+.timer-controls button:active { transform: scale(0.95); }
+
+h2 { border-bottom: 2px solid var(--color-gray); padding-bottom: 10px; margin-top: 40px; color: var(--color-black); font-size: 1.5em; display: flex; justify-content: space-between; align-items: center; }
+.toggle-seccion, .toggle-header { cursor: pointer; user-select: none; }
+.task-counter { font-family: 'Lato', sans-serif; font-size: 0.7em; font-weight: 700; color: #6c757d; background-color: #e9ecef; padding: 2px 6px; border-radius: 5px; }
+.arrow { display: inline-block; transition: transform 0.2s ease-in-out; }
+.arrow.collapsed { transform: rotate(-90deg); }
+
+ul { list-style: none; padding-left: 0; }
+ul.collapsed { display: none; }
+
+li { background-color: #fff; border-left: 5px solid var(--color-gray); padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: all 0.3s ease; cursor: grab; }
+li:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+li.discutido { opacity: 0.7; background-color: #fafafa; border-left-color: #95a5a6; }
+li.discutido h4 { text-decoration: line-through; color: #7f8c8d; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+.card-header h4 { margin-top: 0; font-size: 1.2em; flex-grow: 1; color: var(--color-black);}
+.card-content { display: flex; gap: 25px; margin-top: 15px; }
+.card-meta { flex: 1; min-width: 180px; }
+.card-main { flex: 2; }
+p { margin: 0 0 10px 0; color: #555; line-height: 1.6; }
+textarea, select, input[type="date"] { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: 'Lato', sans-serif; font-size: 1em; margin-top: 5px; }
+label { font-weight: 700; margin-top: 15px; display: block; font-size: 0.9em; color: #444; }
+.fantasma { opacity: 0.5; background: #c8ebfb; }
+#completados-container { margin-top: 50px; border-top: 2px solid #eee; padding-top: 20px; }
+#lista-completados { display: none; }
+#completados-container.hidden { display: none; }
+.card-actions { margin-top: 20px; text-align: right; }
+.task-action-btn { border: none; padding: 8px 15px; border-radius: 5px; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
+.complete-task-btn { background-color: var(--color-green); color: white; }
+.reopen-task-btn { background-color: var(--color-blue); color: white; }
+
+.task-timer-controls { text-align: right; }
+.task-time-display { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1.2em; color: var(--color-blue); }
+.task-timer-start-btn { font-size: 0.9em; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--color-gray); background-color: #fff; cursor: pointer; }
+.task-timer-start-btn.running { background-color: #c0392b; color: white; border-color: #c0392b; }
+.progress-bar-container { width: 100%; background-color: #e9ecef; border-radius: 5px; height: 8px; margin-top: 10px; overflow: hidden; display: none; }
+.progress-bar { width: 100%; height: 100%; background-color: var(--color-blue); transition: width 0.5s linear; }
+
+#toast {
+    position: fixed; bottom: 20px; right: 20px; background-color: var(--color-black);
+    color: white; padding: 15px; border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.5s, visibility 0.5s, transform 0.5s;
+    transform: translateY(20px);
+    z-index: 2000;
+}
+#toast.show { opacity: 1; visibility: visible; transform: translateY(0); }
+
+@media (max-width: 768px) {
+    body { padding-top: 140px; }
+    header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    main { padding: 0 10px; margin: 15px auto; }
+    #info-reunion { flex-direction: column; gap: 20px; }
+    .card-content { flex-direction: column; }
+    #total-time-container {
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    li { padding: 15px; }
+    .card-header h4 { font-size: 1.1em; }
+    label { font-size: 0.85em; }
+    .modal-content { padding: 20px; }
+}

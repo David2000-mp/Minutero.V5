@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minutero App | 98 LAB</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --color-black: #191919; --color-orange: #FF4D00; --color-light-gray: #F5F5F5;
+            --color-gray: #D9D9D9; --color-blue: #3498DB; --color-green: #2ECC71;
+            --status-red: #E74C3C; --status-yellow: #F1C40F; --status-blue: #3498DB;
+        }
+        body { font-family: 'Lato', sans-serif; background-color: var(--color-light-gray); margin: 0; padding-top: 75px; }
+        h1, h2, h3, h4, .logo-text, .sidenav a { font-family: 'Montserrat', sans-serif; }
+
+        .sidenav {
+            height: 100%; width: 0; position: fixed; z-index: 3000;
+            top: 0; left: 0; background-color: var(--color-black);
+            overflow-x: hidden; transition: 0.5s; padding-top: 60px;
+        }
+        .sidenav a {
+            padding: 15px 20px 15px 30px; text-decoration: none; font-size: 1.2em;
+            color: #818181; display: block; transition: 0.3s;
+        }
+        .sidenav a:hover { color: var(--color-orange); }
+        .sidenav .close-btn { position: absolute; top: 15px; right: 25px; font-size: 36px; }
+        .hamburger-menu { font-size: 30px; cursor: pointer; color: white; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center;
+            align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background-color: white; padding: 30px 40px; border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 600px;
+        }
+        .modal-content h2 { margin-top: 0; }
+        #modal-task-list {
+            list-style: none; padding: 0; margin-top: 20px;
+            max-height: 50vh; overflow-y: auto; border: 1px solid var(--color-gray);
+            border-radius: 5px;
+        }
+        #modal-task-list li {
+            padding: 10px 15px; background-color: #fff; border-left: 5px solid var(--color-gray);
+            border-bottom: 1px solid #eee; cursor: grab; display: flex;
+            align-items: center; justify-content: space-between; gap: 10px;
+        }
+        #modal-task-list li:last-child { border-bottom: none; }
+        .modal-task-title { flex-grow: 1; }
+        .time-input { width: 70px; text-align: right; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9em; }
+        #start-meeting-btn {
+            display: block; width: 100%; padding: 15px; font-family: 'Montserrat', sans-serif;
+            font-size: 1.2em; font-weight: 700; background-color: var(--color-orange);
+            color: var(--color-black); border: none; border-radius: 5px;
+            margin-top: 20px; cursor: pointer;
+        }
+
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; background-color: var(--color-black);
+            color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000;
+            padding: 15px 20px; box-sizing: border-box; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .logo-container { display: flex; align-items: center; gap: 15px; }
+        .logo-container img { height: 35px; }
+        .logo-text { font-size: 1.2em; font-weight: 700; color: var(--color-orange); }
+        .header-controls { display: flex; align-items: center; gap: 10px; }
+        .header-controls button {
+            font-family: 'Lato', sans-serif; font-weight: 700; font-size: 0.8em;
+            padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;
+            background-color: var(--color-gray); color: var(--color-black); transition: all 0.2s;
+        }
+        .header-controls button:hover { transform: scale(1.05); }
+        #export-pdf { background-color: var(--color-orange); }
+        #reset-meeting { background-color: #6c757d; color: white; }
+        main { max-width: 900px; margin: 20px auto; padding: 0 15px; }
+
+        #info-reunion {
+            background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-bottom: 30px; display: flex; flex-direction: column; gap: 20px;
+        }
+        #info-reunion > div { flex: 1; }
+        #info-reunion h3 { margin-top: 0; font-size: 1.1em; color: var(--color-black); border-bottom: 2px solid var(--color-light-gray); padding-bottom: 8px; margin-bottom: 15px;}
+        #attendees-list { display: flex; flex-wrap: wrap; gap: 15px; padding: 0; }
+        .attendee-item { display: flex; align-items: center; }
+        .attendee-item input { margin-right: 8px; transform: scale(1.2); }
+
+        #agenda-summary {
+            background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            margin-bottom: 40px;
+        }
+        .summary-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
+        }
+        .summary-header h3 { margin: 0; font-size: 1.2em; color: var(--color-black); }
+        #status-legend { display: flex; gap: 15px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.8em; color: #6c757d; }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; }
+
+        #agenda-summary ol { padding-left: 25px; margin: 0; }
+        #agenda-summary li { margin-bottom: 8px; color: #333; list-style-type: none; position: relative; }
+        #agenda-summary li::before {
+            content: ''; position: absolute; left: -20px; top: 7px;
+            width: 10px; height: 10px; border-radius: 50%;
+            background-color: var(--color-gray);
+        }
+        #agenda-summary li.status-sin-revisar::before { background-color: var(--status-red); }
+        #agenda-summary li.status-en-proceso::before { background-color: var(--status-yellow); }
+        #agenda-summary li.status-en-espera::before { background-color: var(--status-blue); }
+        #agenda-summary a { color: #333; text-decoration: none; }
+        #agenda-summary a:hover { color: var(--color-blue); text-decoration: underline; }
+
+        #total-time-container {
+            font-weight: bold; text-align: right; font-size: 1.1em;
+            margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;
+        }
+        #total-time-container span { font-weight: normal; color: #333; }
+
+        #cronometro-container { text-align: right; display: flex; align-items: center; gap: 10px;}
+        #timer-display { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1.2em; color: white; }
+        .timer-eta { font-size: 0.8em; opacity: 0.7; margin-left: 5px; }
+
+        h2 { border-bottom: 2px solid var(--color-gray); padding-bottom: 10px; margin-top: 40px; color: var(--color-black); font-size: 1.5em; display: flex; justify-content: space-between; align-items: center; }
+        .toggle-seccion, .toggle-header { cursor: pointer; user-select: none; }
+        .task-counter { font-family: 'Lato', sans-serif; font-size: 0.7em; font-weight: 700; color: #6c757d; background-color: #e9ecef; padding: 2px 6px; border-radius: 5px; }
+        .arrow { display: inline-block; transition: transform 0.2s ease-in-out; }
+        .arrow.collapsed { transform: rotate(-90deg); }
+
+        ul { list-style: none; padding-left: 0; }
+        ul.collapsed { display: none; }
+
+        li { background-color: #fff; border-left: 5px solid var(--color-gray); padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: all 0.3s ease; cursor: grab; }
+        li:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        li.discutido { opacity: 0.7; background-color: #fafafa; border-left-color: #95a5a6; }
+        li.discutido h4 { text-decoration: line-through; color: #7f8c8d; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+        .card-header h4 { margin-top: 0; font-size: 1.2em; flex-grow: 1; color: var(--color-black);}
+        .card-content { display: flex; gap: 25px; margin-top: 15px; }
+        .card-meta { flex: 1; min-width: 180px; }
+        .card-main { flex: 2; }
+        p { margin: 0 0 10px 0; color: #555; line-height: 1.6; }
+        textarea, select, input[type="date"] { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: 'Lato', sans-serif; font-size: 1em; margin-top: 5px; }
+        label { font-weight: 700; margin-top: 15px; display: block; font-size: 0.9em; color: #444; }
+        .fantasma { opacity: 0.5; background: #c8ebfb; }
+        #completados-container { margin-top: 50px; border-top: 2px solid #eee; padding-top: 20px; }
+        #lista-completados { display: none; }
+        #completados-container.hidden { display: none; }
+        .card-actions { margin-top: 20px; text-align: right; }
+        .task-action-btn { border: none; padding: 8px 15px; border-radius: 5px; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
+        .complete-task-btn { background-color: var(--color-green); color: white; }
+        .reopen-task-btn { background-color: var(--color-blue); color: white; }
+
+        .task-timer-controls { text-align: right; }
+        .task-time-display { font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1.2em; color: var(--color-blue); }
+        .task-timer-start-btn { font-size: 0.9em; padding: 5px 10px; border-radius: 5px; border: 1px solid var(--color-gray); background-color: #fff; cursor: pointer; }
+        .task-timer-start-btn.running { background-color: #c0392b; color: white; border-color: #c0392b; }
+        .progress-bar-container { width: 100%; background-color: #e9ecef; border-radius: 5px; height: 8px; margin-top: 10px; overflow: hidden; display: none; }
+        .progress-bar { width: 100%; height: 100%; background-color: var(--color-blue); transition: width 0.5s linear; }
+
+        #toast {
+            position: fixed; bottom: 20px; right: 20px; background-color: var(--color-black);
+            color: white; padding: 15px; border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s, transform 0.5s;
+            transform: translateY(20px);
+            z-index: 2000;
+        }
+        #toast.show { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        #add-task-footer {
+            background-color: #fff; padding: 25px 40px; margin-top: 50px;
+            border-top: 1px solid #ddd; text-align: center;
+        }
+        #add-task-footer h3 { margin-top: 0; margin-bottom: 15px; color: var(--color-black); }
+        .add-task-btn {
+            display: inline-block; padding: 12px 25px; font-family: 'Montserrat', sans-serif;
+            font-size: 1em; font-weight: 700; background-color: var(--color-orange);
+            color: var(--color-black); border: none; border-radius: 5px;
+            cursor: pointer; text-decoration: none; transition: transform 0.2s;
+        }
+        .add-task-btn:hover { transform: scale(1.05); }
+
+        .status-sin-revisar { border-left-color: var(--status-red) !important; }
+        .status-en-proceso { border-left-color: var(--status-yellow) !important; }
+        .status-en-espera { border-left-color: var(--status-blue) !important; }
+
+        @media (min-width: 769px) {
+            #info-reunion { flex-direction: row; }
+            .card-content { flex-direction: row; }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidenav" class="sidenav">
+        <a href="javascript:void(0)" class="close-btn">&times;</a>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdErd_KfyoShLbkvjxGsXosrJZ0M6Aw5l0ujpXBLaOOHjGdbQ/viewform" target="_blank">Agendar Tarea</a>
+    </div>
+
+    <div id="setup-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Planificar Reunión</h2>
+            <p>Define el orden (arrastrando) y asigna minutos a cada tarea.</p>
+            <div id="status-legend" style="margin-top: 15px; margin-bottom: 10px;">
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--status-red);"></div>Sin Revisar</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--status-yellow);"></div>En Proceso</div>
+                <div class="legend-item"><div class="legend-color" style="background-color: var(--status-blue);"></div>En Espera</div>
+            </div>
+            <ul id="modal-task-list"><li>Cargando tareas...</li></ul>
+            <button id="start-meeting-btn">Guardar y Empezar</button>
+        </div>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <header>
+            <div class="logo-container">
+                <span class="hamburger-menu">☰</span>
+                <img src="logo.png" alt="98 LAB Logo">
+                <div class="logo-text">| Minutero</div>
+            </div>
+            <div class="header-controls">
+                <div id="cronometro-container">
+                    <span id="timer-display-label">Tiempo Total</span>
+                    <div id="timer-display">00:00</div>
+                    <span class="timer-eta"></span>
+                </div>
+                <button id="reset-meeting">Limpiar Minuta</button>
+                <button id="export-pdf">Exportar PDF</button>
+            </div>
+        </header>
+        <main>
+            <div id="info-reunion">
+                <div><h3>Número de Reunión</h3><select id="meeting-number"></select></div>
+                <div>
+                    <h3>Asistentes</h3>
+                    <div id="attendees-list">
+                        <div class="attendee-item"><input type="checkbox" class="attendee-checkbox" value="Andoni" id="att-andoni"><label for="att-andoni">Andoni</label></div>
+                        <div class="attendee-item"><input type="checkbox" class="attendee-checkbox" value="Axel" id="att-axel"><label for="att-axel">Axel</label></div>
+                        <div class="attendee-item"><input type="checkbox" class="attendee-checkbox" value="Pablo" id="att-pablo"><label for="att-pablo">Pablo</label></div>
+                        <div class="attendee-item"><input type="checkbox" class="attendee-checkbox" value="David" id="att-david"><label for="att-david">David</label></div>
+                    </div>
+                </div>
+            </div>
+            <div id="agenda-summary" style="display: none;">
+                <div class="summary-header">
+                    <h3>Resumen de la Agenda</h3>
+                </div>
+                <ol id="summary-list"></ol>
+                <div id="total-time-container">
+                    <span>Tiempo total estimado:</span>
+                    <span id="total-time-value">0 minutos</span>
+                </div>
+            </div>
+            <div id="agenda-container"></div>
+            <div id="completados-container" class="hidden">
+                <h2 class="toggle-header">Tareas Discutidas <span class="task-counter">(0)</span> <span class="arrow collapsed">▼</span></h2>
+                <ul id="lista-completados" class="collapsed"></ul>
+            </div>
+        </main>
+        <div id="toast"></div>
+        
+        <footer id="add-task-footer">
+            <h3>¿Surgió un nuevo pendiente?</h3>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSdErd_KfyoShLbkvjxGsXosrJZ0M6Aw5l0ujpXBLaOOHjGdbQ/viewform" target="_blank" class="add-task-btn">Agendar Tarea</a>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', main);
+        
+        const colorMap = { /* No longer used for categories */ };
+        
+        let toastTimeout;
+        let activeTaskTimer = {
+            intervalId: null, li: null, remainingSeconds: 0, totalSeconds: 0
+        };
+        let globalTimer = {
+            intervalId: null, totalSeconds: 0, isRunning: false
+        };
+
+        function getStatusClass(status) {
+            const normalizedStatus = status.trim().toLowerCase();
+            if (normalizedStatus === 'sin revisar') return 'status-sin-revisar';
+            if (normalizedStatus === 'en proceso') return 'status-en-proceso';
+            if (normalizedStatus === 'en espera') return 'status-en-espera';
+            return '';
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2000);
+        }
+
+        function inicializarControles() {
+            const timerDisplay = document.getElementById('timer-display');
+            
+            function updateGlobalDisplay() {
+                const minutes = Math.floor(globalTimer.totalSeconds / 60);
+                const seconds = globalTimer.totalSeconds % 60;
+                timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+
+            const resetMeetingButton = document.getElementById('reset-meeting');
+            resetMeetingButton.addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que quieres borrar todos los datos de esta minuta?')) {
+                    localStorage.removeItem('agendaEstado');
+                    location.reload();
+                }
+            });
+            const meetingNumberSelect = document.getElementById('meeting-number');
+            for (let i = 1; i <= 50; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Reunión #${i}`;
+                meetingNumberSelect.appendChild(option);
+            }
+            meetingNumberSelect.addEventListener('change', guardarEstado);
+            document.querySelectorAll('.attendee-checkbox').forEach(cb => cb.addEventListener('change', guardarEstado));
+            
+            const openNavBtn = document.querySelector('.hamburger-menu');
+            const closeNavBtn = document.querySelector('.sidenav .close-btn');
+            const sidenav = document.getElementById('sidenav');
+            
+            openNavBtn.addEventListener('click', () => {
+                sidenav.style.width = '250px';
+            });
+            closeNavBtn.addEventListener('click', () => {
+                sidenav.style.width = '0';
+            });
+
+            inicializarBotonPDF();
+        }
+
+        function guardarEstado() {
+            const attendees = Array.from(document.querySelectorAll('.attendee-checkbox:checked')).map(cb => cb.value);
+            const estado = {
+                reunion: document.getElementById('meeting-number').value,
+                asistentes: attendees,
+                tareas: {}
+            };
+            document.querySelectorAll('#agenda-container li, #lista-completados li').forEach(li => {
+                const id = li.dataset.tareaId;
+                if (!id) return;
+                estado.tareas[id] = {
+                    acuerdos: li.querySelector('.acuerdos-textarea').value,
+                    notas: li.querySelector('.notas-textarea').value,
+                    rol: li.querySelector('.rol-select').value,
+                    responsable: li.querySelector('.responsable-select').value,
+                    fechaEntrega: li.querySelector('.due-date-input').value,
+                    discutido: li.parentElement.id === 'lista-completados',
+                    tiempo: li.dataset.tiempoAsignado || 0
+                };
+            });
+            localStorage.setItem('agendaEstado', JSON.stringify(estado));
+            showToast('✓ Guardado');
+        }
+
+        function cargarEstado() {
+            const estadoGuardado = localStorage.getItem('agendaEstado');
+            if (!estadoGuardado) return;
+            const estado = JSON.parse(estadoGuardado);
+            document.getElementById('meeting-number').value = estado.reunion || '1';
+            if (estado.asistentes && Array.isArray(estado.asistentes)) {
+                estado.asistentes.forEach(name => {
+                    const checkbox = document.querySelector(`.attendee-checkbox[value="${name}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            const listaCompletados = document.getElementById('lista-completados');
+            const completadosContainer = document.getElementById('completados-container');
+            let hayCompletados = false;
+            for (const id in estado.tareas) {
+                const li = document.querySelector(`li[data-tarea-id="${id}"]`);
+                if (li) {
+                    const datosTarea = estado.tareas[id];
+                    li.querySelector('.acuerdos-textarea').value = datosTarea.acuerdos || '';
+                    li.querySelector('.notas-textarea').value = datosTarea.notas || '';
+                    li.querySelector('.rol-select').value = datosTarea.rol || '';
+                    li.querySelector('.responsable-select').value = datosTarea.responsable || '';
+                    li.querySelector('.due-date-input').value = datosTarea.fechaEntrega || '';
+                    li.dataset.tiempoAsignado = datosTarea.tiempo || 0;
+                    if (li.querySelector('.task-time-display')) {
+                        const tiempo = datosTarea.tiempo || 0;
+                        li.querySelector('.task-time-display').textContent = `${tiempo}:00`;
+                    }
+                    if (datosTarea.discutido) {
+                        li.classList.add('discutido');
+                        listaCompletados.appendChild(li);
+                        hayCompletados = true;
+                        const boton = li.querySelector('.task-action-btn');
+                        boton.textContent = 'Reabrir';
+                        boton.classList.replace('complete-task-btn', 'reopen-task-btn');
+                    }
+                }
+            }
+            if (hayCompletados) {
+                completadosContainer.classList.remove('hidden');
+            }
+        }
+
+        async function fetchSheetData() {
+            try {
+                const response = await fetch('/read_sheet');
+                if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);
+                const result = await response.json();
+                if (result.error) throw new Error(result.error);
+                return result.data;
+            } catch (error) {
+                console.error("Error al obtener los datos:", error);
+                document.getElementById('agenda-container').innerHTML = `<p style="color: red;">No se pudo cargar la agenda.</p>`;
+                return [];
+            }
+        }
+
+        function displayAgenda(agendaData, tiempoTotalMinutos) {
+            const agendaContainer = document.getElementById('agenda-container');
+            const summaryContainer = document.getElementById('agenda-summary');
+            const summaryList = document.getElementById('summary-list');
+            const totalTimeValue = document.getElementById('total-time-value');
+            const headerEta = document.querySelector('.timer-eta');
+            
+            agendaContainer.innerHTML = '';
+            summaryList.innerHTML = '';
+
+            if (!agendaData || agendaData.length === 0) {
+                agendaContainer.innerHTML = "<h2>No hay pendientes para mostrar en la agenda.</h2>";
+                summaryContainer.style.display = 'none';
+                return;
+            }
+
+            agendaData.forEach(tareaObj => {
+                const tareaId = `${tareaObj.datos[3]}-${tareaObj.datos[0]}`.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                const summaryItem = document.createElement('li');
+                summaryItem.innerHTML = `<a href="#${tareaId}">${tareaObj.datos[3]}</a>`;
+                const statusClass = getStatusClass(tareaObj.datos[1]);
+                if (statusClass) {
+                    summaryItem.classList.add(statusClass);
+                }
+                summaryList.appendChild(summaryItem);
+            });
+            totalTimeValue.textContent = `${tiempoTotalMinutos} minutos`;
+            const now = new Date();
+            const endTime = new Date(now.getTime() + tiempoTotalMinutos * 60000);
+            const etaString = endTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            headerEta.textContent = `(Fin aprox. ${etaString})`;
+            summaryContainer.style.display = 'block';
+
+            let categoriaActual = "";
+            let ulActual = null;
+            agendaData.forEach(tareaObj => {
+                const categoria = tareaObj.categoriaOriginal;
+                const tarea = tareaObj.datos;
+                const tiempoAsignado = tareaObj.tiempo;
+                if (categoria !== categoriaActual) {
+                    categoriaActual = categoria;
+                    const h2 = document.createElement('h2');
+                    h2.className = 'toggle-seccion';
+                    h2.innerHTML = `<span>${categoria}</span><div class="controls"><span class="task-counter"></span> <span class="arrow">▲</span></div>`;
+                    agendaContainer.appendChild(h2);
+                    ulActual = document.createElement('ul');
+                    ulActual.id = `lista-${categoria.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                    ulActual.className = 'seccion-ul';
+                    agendaContainer.appendChild(ulActual);
+                }
+                const li = document.createElement('li');
+                const tareaId = `${tarea[3]}-${tarea[0]}`.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+                li.id = tareaId;
+                li.dataset.tareaId = tareaId;
+                li.dataset.originalLista = ulActual.id;
+                li.dataset.tiempoAsignado = tiempoAsignado;
+                const statusClass = getStatusClass(tarea[1]);
+                if (statusClass) {
+                    li.classList.add(statusClass);
+                }
+                
+                li.innerHTML = `
+                    <div class="card-header">
+                        <h4>${tarea[3]}</h4>
+                        <div class="task-timer-controls">
+                            <div class="task-time-display">${tiempoAsignado}:00</div>
+                            <button class="task-timer-start-btn">▶ Iniciar</button>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container"><div class="progress-bar"></div></div>
+                    <div class="card-content">
+                        <div class="card-meta"><p><strong>Propuesto por:</strong><br>${tarea[0]}</p><label>Rol Asignado:</label><select class="rol-select"><option value="">-- Elegir Rol --</option><option value="Productor">Productor</option><option value="Director Creativo">Director Creativo</option><option value="Relaciones Públicas">Relaciones Públicas</option><option value="Publicista">Publicista</option></select><label>Responsable:</label><select class="responsable-select"><option value="">-- Elegir Persona --</option><option value="David">David</option><option value="Andoni">Andoni</option><option value="Axel">Axel</option><option value="Pablo">Pablo</option></select><label>Fecha de Entrega:</label><input type="date" class="due-date-input"></div>
+                        <div class="card-main"><label>Acuerdos:</label><textarea class="acuerdos-textarea" rows="3" placeholder="Escribe aquí los acuerdos clave..."></textarea><label>Notas:</label><textarea class="notas-textarea" rows="2" placeholder="Observaciones, próximos pasos, etc..."></textarea></div>
+                    </div>
+                    <div class="card-actions"><button class="task-action-btn complete-task-btn">Completar</button></div>
+                `;
+                li.querySelectorAll('textarea, select, input[type="date"]').forEach(input => {
+                    input.addEventListener('input', guardarEstado);
+                });
+                ulActual.appendChild(li);
+            });
+            document.querySelectorAll('ul').forEach(lista => { new Sortable(lista, { group: 'shared', animation: 150, ghostClass: 'fantasma', onEnd: guardarEstado }); });
+        }
+        
+        function actualizarContadores() {
+            const listaCompletados = document.getElementById('lista-completados');
+            const completadosHeader = document.querySelector('#completados-container .toggle-header');
+            if (completadosHeader) {
+                completadosHeader.querySelector('.task-counter').textContent = `(${listaCompletados.children.length})`;
+            }
+            document.querySelectorAll('#agenda-container .seccion-ul').forEach(ul => {
+                const header = ul.previousElementSibling;
+                if (!header) return;
+                const totalTareas = document.querySelectorAll(`li[data-original-lista="${ul.id}"]`).length;
+                const tareasCompletadasEnSeccion = listaCompletados.querySelectorAll(`li[data-original-lista="${ul.id}"]`).length;
+                header.querySelector('.task-counter').textContent = `(${tareasCompletadasEnSeccion}/${totalTareas})`;
+            });
+        }
+
+        function inicializarBotonPDF() {
+            const exportButton = document.getElementById('export-pdf');
+            window.jsPDF = window.jspdf.jsPDF;
+            exportButton.addEventListener('click', () => {
+                exportButton.disabled = true;
+                exportButton.textContent = 'Generando...';
+                const tareasPorPersona = {};
+                document.querySelectorAll('#agenda-container li, #lista-completados li').forEach(li => {
+                    const responsable = li.querySelector('.responsable-select').value;
+                    const tituloTarea = li.querySelector('h4').textContent;
+                    const acuerdos = li.querySelector('.acuerdos-textarea').value;
+                    const fechaEntrega = li.querySelector('.due-date-input').value;
+                    if (responsable) {
+                        if (!tareasPorPersona[responsable]) { tareasPorPersona[responsable] = []; }
+                        tareasPorPersona[responsable].push({
+                            titulo: tituloTarea,
+                            acuerdos: acuerdos || 'No se definieron acuerdos.',
+                            fecha: fechaEntrega
+                        });
+                    }
+                });
+                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                let y = 20; const margen = 15; const anchoPagina = doc.internal.pageSize.getWidth();
+                const meetingNumber = document.getElementById('meeting-number').value;
+                doc.setFont('Montserrat', 'bold');
+                doc.setFontSize(22);
+                doc.setTextColor('#191919');
+                doc.text(`Resumen | Reunión #${meetingNumber}`, anchoPagina / 2, y, { align: 'center' });
+                y += 8;
+                doc.setFont('Lato', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor('#555');
+                doc.text(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }), anchoPagina / 2, y, { align: 'center' });
+                y += 15;
+                doc.setDrawColor('#FF4D00');
+                doc.setLineWidth(0.5);
+                doc.line(margen, y, anchoPagina - margen, y);
+                y += 12;
+                const asistentes = Array.from(document.querySelectorAll('.attendee-checkbox:checked')).map(cb => cb.value);
+                if(asistentes.length > 0) {
+                    doc.setFont('Montserrat', 'bold');
+                    doc.setFontSize(12);
+                    doc.setTextColor('#191919');
+                    doc.text('Asistentes:', margen, y);
+                    y += 6;
+                    doc.setFont('Lato', 'normal');
+                    doc.setFontSize(11);
+                    doc.setTextColor('#333');
+                    doc.text(asistentes.join(', '), margen, y);
+                    y += 15;
+                }
+                if (Object.keys(tareasPorPersona).length === 0) {
+                    doc.setFont('Lato', 'normal');
+                    doc.setFontSize(12);
+                    doc.text('No se asignaron tareas a ningún responsable.', anchoPagina / 2, y, { align: 'center' });
+                }
+                for (const persona in tareasPorPersona) {
+                    if (y > 260) { doc.addPage(); y = 20; }
+                    doc.setFont('Montserrat', 'bold');
+                    doc.setFontSize(16);
+                    doc.setTextColor('#FF4D00');
+                    doc.text(persona, margen, y);
+                    y += 8;
+                    tareasPorPersona[persona].forEach(tarea => {
+                        if (y > 270) { doc.addPage(); y = 20; }
+                        doc.setFont('Lato', 'bold');
+                        doc.setFontSize(12);
+                        doc.setTextColor('#191919');
+                        doc.text(`• Tarea: ${tarea.titulo}`, margen + 5, y);
+                        y += 6;
+                        doc.setFontSize(10);
+                        doc.setTextColor('#555');
+                        let fechaFormateada = tarea.fecha ? new Date(tarea.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'No definida';
+                        doc.text(`  Fecha de Entrega: ${fechaFormateada}`, margen + 5, y);
+                        y += 7;
+                        doc.setFont('Lato', 'normal');
+                        doc.setFontSize(11);
+                        doc.setTextColor('#333');
+                        let textoAcuerdos = doc.splitTextToSize(`  Acuerdos: ${tarea.acuerdos}`, anchoPagina - (margen * 2) - 15);
+                        doc.text(textoAcuerdos, margen + 10, y);
+                        y += (textoAcuerdos.length * 5) + 8;
+                    });
+                }
+                doc.save(`resumen-reunion-${meetingNumber}.pdf`);
+                exportButton.disabled = false;
+                exportButton.textContent = 'Exportar PDF';
+            });
+        }
+        
+        document.querySelector('main').addEventListener('click', function(event) {
+            const header = event.target.closest('.toggle-seccion, .toggle-header');
+            const completeBtn = event.target.closest('.complete-task-btn');
+            const reopenBtn = event.target.closest('.reopen-task-btn');
+            const startTimerBtn = event.target.closest('.task-timer-start-btn');
+            if (header) {
+                const list = header.nextElementSibling;
+                const arrow = header.querySelector('.arrow');
+                if (list && list.tagName === 'UL') {
+                    const isCollapsed = list.classList.toggle('collapsed');
+                    arrow.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                }
+            }
+            if (completeBtn || reopenBtn) {
+                const boton = completeBtn || reopenBtn;
+                const li = boton.closest('li');
+                const isCompleting = boton.classList.contains('complete-task-btn');
+                li.classList.toggle('discutido', isCompleting);
+                if (isCompleting) {
+                    document.getElementById('lista-completados').appendChild(li);
+                    document.getElementById('completados-container').classList.remove('hidden');
+                    boton.textContent = 'Reabrir';
+                    boton.classList.replace('complete-task-btn', 'reopen-task-btn');
+                } else {
+                    const originalLista = document.getElementById(li.dataset.originalLista);
+                    if (originalLista) originalLista.appendChild(li);
+                    boton.textContent = 'Completar';
+                    boton.classList.replace('reopen-task-btn', 'complete-task-btn');
+                }
+                actualizarContadores();
+                guardarEstado();
+            }
+            if (startTimerBtn) {
+                const li = startTimerBtn.closest('li');
+                if (activeTaskTimer.li === li) {
+                    clearInterval(activeTaskTimer.intervalId);
+                    activeTaskTimer.intervalId = null;
+                    activeTaskTimer.li = null;
+                    startTimerBtn.textContent = '▶ Reanudar';
+                    startTimerBtn.classList.remove('running');
+                    return;
+                }
+                if (activeTaskTimer.intervalId) {
+                    clearInterval(activeTaskTimer.intervalId);
+                    const botonAnterior = activeTaskTimer.li.querySelector('.task-timer-start-btn');
+                    botonAnterior.textContent = '▶ Iniciar';
+                    botonAnterior.classList.remove('running');
+                    const tiempoTotalAnterior = (activeTaskTimer.li.dataset.tiempoAsignado || 0) * 60;
+                    if(tiempoTotalAnterior > 0) {
+                        activeTaskTimer.li.querySelector('.progress-bar').style.width = `${(activeTaskTimer.remainingSeconds/tiempoTotalAnterior)*100}%`;
+                    }
+                }
+                
+                const tiempoAsignadoMinutos = parseInt(li.dataset.tiempoAsignado, 10) || 0;
+                if (tiempoAsignadoMinutos > 0) {
+                    if (!globalTimer.isRunning) {
+                        globalTimer.isRunning = true;
+                        const timerDisplay = document.getElementById('timer-display');
+                        globalTimer.intervalId = setInterval(() => {
+                            globalTimer.totalSeconds++;
+                            const minutes = Math.floor(globalTimer.totalSeconds / 60);
+                            const seconds = globalTimer.totalSeconds % 60;
+                            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                        }, 1000);
+                    }
+                    const tiempoTotalSegundos = tiempoAsignadoMinutos * 60;
+                    activeTaskTimer.remainingSeconds = tiempoTotalSegundos;
+                    activeTaskTimer.totalSeconds = tiempoTotalSegundos;
+                    activeTaskTimer.li = li;
+                    startTimerBtn.textContent = '❚❚ Pausar';
+                    startTimerBtn.classList.add('running');
+                    const display = li.querySelector('.task-time-display');
+                    const progressBarContainer = li.querySelector('.progress-bar-container');
+                    const progressBar = li.querySelector('.progress-bar');
+                    progressBarContainer.style.display = 'block';
+
+                    activeTaskTimer.intervalId = setInterval(() => {
+                        activeTaskTimer.remainingSeconds--;
+                        const minutes = Math.floor(activeTaskTimer.remainingSeconds / 60);
+                        const seconds = activeTaskTimer.remainingSeconds % 60;
+                        display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                        const porcentajeRestante = (activeTaskTimer.remainingSeconds / activeTaskTimer.totalSeconds) * 100;
+                        progressBar.style.width = `${porcentajeRestante}%`;
+                        if (activeTaskTimer.remainingSeconds <= 0) {
+                            clearInterval(activeTaskTimer.intervalId);
+                            activeTaskTimer.intervalId = null;
+                            activeTaskTimer.li = null;
+                            startTimerBtn.textContent = '¡Tiempo!';
+                            startTimerBtn.disabled = true;
+                            startTimerBtn.classList.remove('running');
+                            li.style.backgroundColor = '#fff3cd';
+                        }
+                    }, 1000);
+                }
+            }
+        });
+
+        function abrirModalDePlanificacion(agendaData) {
+            const modal = document.getElementById('setup-modal');
+            const taskList = document.getElementById('modal-task-list');
+            const startButton = document.getElementById('start-meeting-btn');
+            taskList.innerHTML = '';
+            const todasLasTareas = agendaData.flatMap(seccion => seccion.tareas.map(tarea => ({ datos: tarea, categoriaOriginal: seccion.categoria })) );
+            todasLasTareas.forEach(tareaObj => {
+                const li = document.createElement('li');
+                const statusClass = getStatusClass(tareaObj.datos[1]);
+                if(statusClass) li.classList.add(statusClass);
+                li.innerHTML = `<span class="modal-task-title">${tareaObj.datos[3]}</span><input type="number" class="time-input" placeholder="min" min="0">`;
+                li.dataset.tareaData = JSON.stringify(tareaObj);
+                taskList.appendChild(li);
+            });
+            new Sortable(taskList, { animation: 150 });
+            
+            startButton.addEventListener('click', () => {
+                let tiempoTotalPlanificado = 0;
+                const tareasReordenadas = Array.from(taskList.querySelectorAll('li')).map(li => {
+                    const tareaObj = JSON.parse(li.dataset.tareaData);
+                    const tiempoAsignado = parseInt(li.querySelector('.time-input').value, 10) || 0;
+                    tareaObj.tiempo = tiempoAsignado;
+                    tiempoTotalPlanificado += tiempoAsignado;
+                    return tareaObj;
+                });
+                
+                modal.style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                
+                inicializarControles(tiempoTotalPlanificado * 60);
+                displayAgenda(tareasReordenadas, tiempoTotalPlanificado);
+                cargarEstado();
+                actualizarContadores();
+            }, { once: true });
+        }
+
+        async function main() {
+            const agendaData = await fetchSheetData();
+            if (agendaData && agendaData.length > 0) {
+                abrirModalDePlanificacion(agendaData);
+            } else {
+                document.getElementById('setup-modal').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                inicializarControles();
+                displayAgenda(agendaData, 0);
+            }
+        }
+    </script>
+</body>
+</html>
