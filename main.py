@@ -1,12 +1,11 @@
 # main.py
 from flask import Flask, jsonify, send_from_directory
-from .sheets_service import get_sheet_data
+from sheets_service import get_sheet_data
 import os
 
 # --- Configuración de la App Flask ---
-# Le decimos a Flask que la carpeta 'frontend' (que está un nivel arriba) 
-# es donde buscará los archivos estáticos como index.html, CSS y JS.
-app = Flask(__name__, static_folder='../frontend')
+# Ahora que main.py está en la raíz, la carpeta 'frontend' está en el mismo nivel.
+app = Flask(__name__, static_folder='frontend')
 
 # --- Ruta de la API para obtener datos ---
 @app.route("/read_sheet")
@@ -62,7 +61,6 @@ def serve(path):
         return send_from_directory(app.static_folder, path)
     else:
         # Para cualquier otra ruta, sirve el index.html principal.
-        # Esto es clave para que funcionen las Single Page Applications (SPA).
         return send_from_directory(app.static_folder, 'index.html')
 
 # --- Bloque para pruebas locales (Vercel no lo usa) ---
