@@ -153,14 +153,16 @@
             gap: 25px;
             margin-top: 15px;
         }
-        .card-column-main {
-            flex: 2;
-            min-width: 250px;
-        }
-        .card-column-side {
-            flex: 1;
-            min-width: 250px;
-        }
+      /* Columna de menús desplegables (Izquierda) */
+    .card-column-main {
+    flex: 3; /* Ocupará el 30% del espacio */
+    min-width: 220px; 
+}
+/* Columna de anotaciones (Derecha) */
+.card-column-side {
+    flex: 7; /* Ocupará el 70% del espacio */
+    min-width: 300px;
+}
         .card-content label {
             font-weight: 700;
             font-size: 0.9em;
