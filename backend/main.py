@@ -13,7 +13,7 @@ def read_sheet():
     try:
         data = get_sheet_data(spreadsheet_id, range_name)
         if data is None:
-            return jsonify({"error": "No se pudo conectar con Google Sheets. Revisa la terminal."}), 500
+            return jsonify({"error": "No se pudo conectar con Google Sheets. Revisa la terminal del servidor."}), 500
         
         if not data or len(data) < 2:
             return jsonify({"data": []})
@@ -25,7 +25,7 @@ def read_sheet():
             col_indices_map = {header: i for i, header in enumerate(headers)}
             for col in required_columns:
                 if col not in col_indices_map:
-                    raise KeyError(f"La columna requerida '{col}' no se encontró en tu Google Sheet. Columnas encontradas: {headers}")
+                    raise KeyError(f"La columna requerida '{col}' no se encontró. Columnas encontradas: {headers}")
             
             estado_col_index = col_indices_map["Estado de la tarea"]
             tipo_propuesta_index = col_indices_map["¿Qué tipo de propuesta es?"]
