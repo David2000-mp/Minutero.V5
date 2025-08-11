@@ -10,15 +10,19 @@ def get_sheet_data(spreadsheet_id, range_name):
     try:
         # 1. Obtener las credenciales desde la variable de entorno de Vercel
         creds_json_str = os.getenv("GOOGLE_CREDENTIALS_JSON")
+        print("[DEBUG] GOOGLE_CREDENTIALS_JSON:", creds_json_str[:100], "..." if creds_json_str else "(vacío)")
         if not creds_json_str:
             print("!!! ERROR FATAL: No se encontró la variable de entorno 'GOOGLE_CREDENTIALS_JSON'.")
             return None
 
         # 2. Convertir el string JSON de las credenciales a un diccionario de Python
         creds_dict = json.loads(creds_json_str)
+        print("[DEBUG] creds_dict keys:", list(creds_dict.keys()))
 
         # 3. Crear las credenciales desde el diccionario
         creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        print("[DEBUG] spreadsheet_id:", spreadsheet_id)
+        print("[DEBUG] range_name:", range_name)
         service = build('sheets', 'v4', credentials=creds)
         sheet = service.spreadsheets()
         
