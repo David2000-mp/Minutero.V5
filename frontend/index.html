@@ -145,12 +145,48 @@
         li.discutido h4 { text-decoration: line-through; color: #7f8c8d; }
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
         .card-header h4 { margin-top: 0; font-size: 1.1em; flex-grow: 1; color: var(--color-black);}
-        .card-content { display: flex; flex-direction: column; gap: 20px; margin-top: 15px; }
-        .card-meta { flex: 1; min-width: 100%; }
-        .card-main { flex: 2; }
+        
+        /* --- ESTILOS PARA ARREGLAR LA TARJETA --- */
+        .card-content {
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 25px;
+            margin-top: 15px;
+        }
+        .card-column-main {
+            flex: 2;
+            min-width: 250px;
+        }
+        .card-column-side {
+            flex: 1;
+            min-width: 250px;
+        }
+        .card-content label {
+            font-weight: 700;
+            font-size: 0.9em;
+            color: #444;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .card-content select,
+        .card-content input[type="date"],
+        .card-content textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Lato', sans-serif;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+        .card-content .card-column-main > *:last-child,
+        .card-content .card-column-side > *:last-child {
+            margin-bottom: 0;
+        }
+        /* --- FIN DE ESTILOS PARA LA TARJETA --- */
+
         p { margin: 0 0 10px 0; color: #555; line-height: 1.6; }
-        textarea, select, input[type="date"] { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: 'Lato', sans-serif; font-size: 1em; margin-top: 5px; }
-        label { font-weight: 700; margin-top: 15px; display: block; font-size: 0.9em; color: #444; }
         .fantasma { opacity: 0.5; background: #c8ebfb; }
         #completados-container { margin-top: 50px; border-top: 2px solid #eee; padding-top: 20px; }
         #lista-completados { display: none; }
@@ -197,7 +233,6 @@
 
         @media (min-width: 769px) {
             #info-reunion { flex-direction: row; }
-            .card-content { flex-direction: row; }
         }
     </style>
 </head>
@@ -496,8 +531,30 @@
                     </div>
                     <div class="progress-bar-container"><div class="progress-bar"></div></div>
                     <div class="card-content">
-                        <div class="card-meta"><p><strong>Propuesto por:</strong><br>${tarea[0]}</p><label>Rol Asignado:</label><select class="rol-select"><option value="">-- Elegir Rol --</option><option value="Productor">Productor</option><option value="Director Creativo">Director Creativo</option><option value="Relaciones Públicas">Relaciones Públicas</option><option value="Publicista">Publicista</option></select><label>Responsable:</label><select class="responsable-select"><option value="">-- Elegir Persona --</option><option value="David">David</option><option value="Andoni">Andoni</option><option value="Axel">Axel</option><option value="Pablo">Pablo</option></select><label>Fecha de Entrega:</label><input type="date" class="due-date-input"></div>
-                        <div class="card-main"><label>Acuerdos:</label><textarea class="acuerdos-textarea" rows="3" placeholder="Escribe aquí los acuerdos clave..."></textarea><label>Notas:</label><textarea class="notas-textarea" rows="2" placeholder="Observaciones, próximos pasos, etc..."></textarea></div>
+                        <div class="card-column-main">
+                            <p><strong>Propuesto por:</strong><br>${tarea[0]}</p>
+                            
+                            <label>Rol Asignado:</label>
+                            <select class="rol-select">
+                                <option value="">-- Elegir Rol --</option><option value="Productor">Productor</option><option value="Director Creativo">Director Creativo</option><option value="Relaciones Públicas">Relaciones Públicas</option><option value="Publicista">Publicista</option>
+                            </select>
+                            
+                            <label>Responsable:</label>
+                            <select class="responsable-select">
+                                <option value="">-- Elegir Persona --</option><option value="David">David</option><option value="Andoni">Andoni</option><option value="Axel">Axel</option><option value="Pablo">Pablo</option>
+                            </select>
+                            
+                            <label>Fecha de Entrega:</label>
+                            <input type="date" class="due-date-input">
+                        </div>
+                    
+                        <div class="card-column-side">
+                            <label>Acuerdos:</label>
+                            <textarea class="acuerdos-textarea" rows="4" placeholder="Escribe aquí los acuerdos clave..."></textarea>
+                            
+                            <label>Notas:</label>
+                            <textarea class="notas-textarea" rows="4" placeholder="Observaciones, próximos pasos, etc..."></textarea>
+                        </div>
                     </div>
                     <div class="card-actions"><button class="task-action-btn complete-task-btn">Completar</button></div>
                 `;
