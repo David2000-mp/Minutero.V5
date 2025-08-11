@@ -146,10 +146,12 @@
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
         .card-header h4 { margin-top: 0; font-size: 1.1em; flex-grow: 1; color: var(--color-black);}
         .card-content { display: flex; flex-direction: column; gap: 20px; margin-top: 15px; }
-        ..card-meta {
-             flex: 1;
-    min-width: 280px; /* Ajusta este valor si es necesario */
-}
+        
+        /* CORRECCIÓN DE CSS: Se cambió '..' por '.' */
+        .card-meta {
+            flex: 1;
+            min-width: 280px; /* Ajusta este valor si es necesario */
+        }
         .card-main { flex: 2; }
         p { margin: 0 0 10px 0; color: #555; line-height: 1.6; }
         textarea, select, input[type="date"] { width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: 'Lato', sans-serif; font-size: 1em; margin-top: 5px; }
@@ -418,11 +420,33 @@
 
         async function fetchSheetData() {
             try {
-                const response = await fetch('/read_sheet');
-                if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);
-                const result = await response.json();
-                if (result.error) throw new Error(result.error);
-                return result.data;
+                // Esta URL es un ejemplo. Debes reemplazarla por tu endpoint real.
+                // const response = await fetch('/read_sheet');
+                // if (!response.ok) throw new Error(`Error del servidor: ${response.statusText}`);
+                // const result = await response.json();
+                // if (result.error) throw new Error(result.error);
+                // return result.data;
+
+                // --- Datos de ejemplo para demostración sin backend ---
+                console.warn("Usando datos de demostración. Reemplaza fetchSheetData con tu endpoint real.");
+                return [
+                    {
+                        categoria: "Creatividad y Diseño",
+                        tareas: [
+                            ["Andoni", "Sin Revisar", "2024-08-01", "Revisión de la propuesta de logo para el Cliente X", "Detalles sobre la propuesta..."],
+                            ["Axel", "En Proceso", "2024-08-02", "Desarrollar mockups para la nueva campaña", "Detalles sobre los mockups..."]
+                        ]
+                    },
+                    {
+                        categoria: "Marketing Digital",
+                        tareas: [
+                            ["Pablo", "En Espera", "2024-08-05", "Planificar calendario de redes sociales para Septiembre", "Detalles del calendario..."],
+                            ["David", "Sin Revisar", "2024-08-06", "Análisis de la competencia en AdWords", "Detalles del análisis..."]
+                        ]
+                    }
+                ];
+                // --- Fin de datos de ejemplo ---
+
             } catch (error) {
                 console.error("Error al obtener los datos:", error);
                 document.getElementById('agenda-container').innerHTML = `<p style="color: red;">No se pudo cargar la agenda.</p>`;
@@ -511,7 +535,7 @@
                 });
                 ulActual.appendChild(li);
             });
-            document.querySelectorAll('ul').forEach(lista => { new Sortable(lista, { group: 'shared', animation: 150, ghostClass: 'fantasma', onEnd: guardarEstado }); });
+            document.querySelectorAll('ul.seccion-ul').forEach(lista => { new Sortable(lista, { group: 'shared', animation: 150, ghostClass: 'fantasma', onEnd: guardarEstado }); });
         }
         
         function actualizarContadores() {
@@ -522,101 +546,209 @@
             }
             document.querySelectorAll('#agenda-container .seccion-ul').forEach(ul => {
                 const header = ul.previousElementSibling;
-                if (!header) return;
-                const totalTareas = document.querySelectorAll(`li[data-original-lista="${ul.id}"]`).length;
-                const tareasCompletadasEnSeccion = listaCompletados.querySelectorAll(`li[data-original-lista="${ul.id}"]`).length;
-                header.querySelector('.task-counter').textContent = `(${tareasCompletadasEnSeccion}/${totalTareas})`;
+                if (!header || !header.matches('h2')) return;
+                
+                // Cuenta las tareas totales originales de esa sección
+                const totalTareas = Array.from(document.querySelectorAll('#agenda-container li, #lista-completados li'))
+                                        .filter(li => li.dataset.originalLista === ul.id).length;
+                // Cuenta las tareas pendientes actuales en esa sección
+                const tareasPendientes = ul.children.length;
+                header.querySelector('.task-counter').textContent = `(${tareasPendientes}/${totalTareas})`;
             });
         }
 
+        // ==================================================================
+        // ===== INICIO DE LA FUNCIÓN PDF ACTUALIZADA =======================
+        // ==================================================================
         function inicializarBotonPDF() {
             const exportButton = document.getElementById('export-pdf');
+            // Asegurarse de que la librería jsPDF está cargada
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                console.error("jsPDF no se ha cargado correctamente.");
+                exportButton.textContent = 'Error: jsPDF no encontrado';
+                return;
+            }
             window.jsPDF = window.jspdf.jsPDF;
+
             exportButton.addEventListener('click', () => {
                 exportButton.disabled = true;
                 exportButton.textContent = 'Generando...';
+
+                // 1. RECOPILAR DATOS (AHORA INCLUYE LAS 'NOTAS')
                 const tareasPorPersona = {};
                 document.querySelectorAll('#agenda-container li, #lista-completados li').forEach(li => {
                     const responsable = li.querySelector('.responsable-select').value;
+                    // Solo procesar tareas con un responsable asignado
+                    if (!responsable) return;
+
                     const tituloTarea = li.querySelector('h4').textContent;
                     const acuerdos = li.querySelector('.acuerdos-textarea').value;
+                    const notas = li.querySelector('.notas-textarea').value; // <-- CAMBIO: Capturar notas
                     const fechaEntrega = li.querySelector('.due-date-input').value;
-                    if (responsable) {
-                        if (!tareasPorPersona[responsable]) { tareasPorPersona[responsable] = []; }
-                        tareasPorPersona[responsable].push({
-                            titulo: tituloTarea,
-                            acuerdos: acuerdos || 'No se definieron acuerdos.',
-                            fecha: fechaEntrega
-                        });
+
+                    if (!tareasPorPersona[responsable]) {
+                        tareasPorPersona[responsable] = [];
                     }
+                    tareasPorPersona[responsable].push({
+                        titulo: tituloTarea,
+                        acuerdos: acuerdos || 'No se definieron acuerdos.',
+                        notas: notas || 'No se agregaron notas.', // <-- CAMBIO: Añadir notas al objeto
+                        fecha: fechaEntrega
+                    });
                 });
+
                 const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-                let y = 20; const margen = 15; const anchoPagina = doc.internal.pageSize.getWidth();
+                const margen = 15;
+                const anchoMaxTexto = doc.internal.pageSize.getWidth() - (margen * 2);
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const bottomMargin = 20;
+                let y = 20;
+
+                // --- Función auxiliar para manejar saltos de página ---
+                const checkPageBreak = (alturaNecesaria) => {
+                    if (y + alturaNecesaria > pageHeight - bottomMargin) {
+                        doc.addPage();
+                        y = 20; // Reiniciar 'y' en la nueva página
+                    }
+                };
+
+                // --- Encabezado del documento ---
                 const meetingNumber = document.getElementById('meeting-number').value;
-                doc.setFont('Montserrat', 'bold');
-                doc.setFontSize(22);
+                doc.setFont('Helvetica', 'bold');
+                doc.setFontSize(20);
                 doc.setTextColor('#191919');
-                doc.text(`Resumen | Reunión #${meetingNumber}`, anchoPagina / 2, y, { align: 'center' });
+                doc.text(`Minuta de Reunión #${meetingNumber}`, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
                 y += 8;
-                doc.setFont('Lato', 'normal');
+
+                doc.setFont('Helvetica', 'normal');
                 doc.setFontSize(11);
                 doc.setTextColor('#555');
-                doc.text(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }), anchoPagina / 2, y, { align: 'center' });
-                y += 15;
-                doc.setDrawColor('#FF4D00');
-                doc.setLineWidth(0.5);
-                doc.line(margen, y, anchoPagina - margen, y);
+                doc.text(new Date().toLocaleDateString('es-ES', { dateStyle: 'long' }), doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
                 y += 12;
+
+                doc.setDrawColor('#FF4D00'); // Color naranja de la marca
+                doc.setLineWidth(0.5);
+                doc.line(margen, y, anchoMaxTexto + margen, y);
+                y += 10;
+
+                // --- Asistentes ---
                 const asistentes = Array.from(document.querySelectorAll('.attendee-checkbox:checked')).map(cb => cb.value);
-                if(asistentes.length > 0) {
-                    doc.setFont('Montserrat', 'bold');
+                if (asistentes.length > 0) {
+                    checkPageBreak(12);
+                    doc.setFont('Helvetica', 'bold');
                     doc.setFontSize(12);
                     doc.setTextColor('#191919');
                     doc.text('Asistentes:', margen, y);
                     y += 6;
-                    doc.setFont('Lato', 'normal');
+
+                    doc.setFont('Helvetica', 'normal');
                     doc.setFontSize(11);
                     doc.setTextColor('#333');
-                    doc.text(asistentes.join(', '), margen, y);
-                    y += 15;
+                    // Manejo de texto largo para la lista de asistentes
+                    const textoAsistentes = doc.splitTextToSize(asistentes.join(', '), anchoMaxTexto);
+                    doc.text(textoAsistentes, margen, y);
+                    y += (textoAsistentes.length * 5) + 10;
                 }
+
+                // --- Tareas por Persona ---
                 if (Object.keys(tareasPorPersona).length === 0) {
-                    doc.setFont('Lato', 'normal');
+                    checkPageBreak(10);
+                    doc.setFont('Helvetica', 'italic');
                     doc.setFontSize(12);
-                    doc.text('No se asignaron tareas a ningún responsable.', anchoPagina / 2, y, { align: 'center' });
+                    doc.text('No se asignaron tareas con responsable en esta minuta.', doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                } else {
+                    for (const persona in tareasPorPersona) {
+                        checkPageBreak(15); // Espacio para el nombre
+                        doc.setFont('Helvetica', 'bold');
+                        doc.setFontSize(16);
+                        doc.setTextColor('#FF4D00'); // Color naranja
+                        doc.text(`Tareas para ${persona}`, margen, y);
+                        y += 10;
+
+                        tareasPorPersona[persona].forEach((tarea, index) => {
+                            // Separador visual entre tareas
+                            if (index > 0) {
+                                checkPageBreak(8);
+                                doc.setDrawColor('#D9D9D9');
+                                doc.setLineWidth(0.2);
+                                doc.line(margen + 5, y - 4, anchoMaxTexto + margen - 5, y - 4);
+                            }
+                            
+                            const lineHeight = 5.5; // Espacio entre líneas de texto
+
+                            // 2. SOLUCIÓN AL OVERFLOW: Usar splitTextToSize para textos largos
+                            // Título de la tarea
+                            doc.setFont('Helvetica', 'bold');
+                            doc.setFontSize(12);
+                            doc.setTextColor('#191919');
+                            const textoTitulo = doc.splitTextToSize(`• ${tarea.titulo}`, anchoMaxTexto - 5);
+                            checkPageBreak(textoTitulo.length * lineHeight);
+                            doc.text(textoTitulo, margen + 5, y);
+                            y += (textoTitulo.length * lineHeight) + 2;
+
+                            // Fecha de entrega
+                            if (tarea.fecha) {
+                                doc.setFont('Helvetica', 'normal');
+                                doc.setFontSize(10);
+                                doc.setTextColor('#6c757d');
+                                let fechaFormateada = new Date(tarea.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                                checkPageBreak(lineHeight);
+                                doc.text(`Fecha de Entrega: ${fechaFormateada}`, margen + 7, y);
+                                y += lineHeight + 3;
+                            }
+
+                            // Acuerdos
+                            doc.setFont('Helvetica', 'bold');
+                            doc.setFontSize(10);
+                            doc.setTextColor('#333');
+                            checkPageBreak(lineHeight);
+                            doc.text('Acuerdos:', margen + 7, y);
+                            y += lineHeight;
+
+                            doc.setFont('Helvetica', 'normal');
+                            doc.setFontSize(11);
+                            const textoAcuerdos = doc.splitTextToSize(tarea.acuerdos, anchoMaxTexto - 10);
+                            checkPageBreak(textoAcuerdos.length * lineHeight);
+                            doc.text(textoAcuerdos, margen + 7, y);
+                            y += (textoAcuerdos.length * lineHeight) + 4;
+
+                            // 3. INCLUSIÓN DE NOTAS EN EL PDF
+                            doc.setFont('Helvetica', 'bold');
+                            doc.setFontSize(10);
+                            doc.setTextColor('#333');
+                            checkPageBreak(lineHeight);
+                            doc.text('Notas Adicionales:', margen + 7, y);
+                            y += lineHeight;
+                            
+                            doc.setFont('Helvetica', 'normal');
+                            doc.setFontSize(11);
+                            doc.setTextColor('#555');
+                            const textoNotas = doc.splitTextToSize(tarea.notas, anchoMaxTexto - 10);
+                            checkPageBreak(textoNotas.length * lineHeight);
+                            doc.text(textoNotas, margen + 7, y);
+                            y += (textoNotas.length * lineHeight) + 12; // Espacio final
+                        });
+                    }
                 }
-                for (const persona in tareasPorPersona) {
-                    if (y > 260) { doc.addPage(); y = 20; }
-                    doc.setFont('Montserrat', 'bold');
-                    doc.setFontSize(16);
-                    doc.setTextColor('#FF4D00');
-                    doc.text(persona, margen, y);
-                    y += 8;
-                    tareasPorPersona[persona].forEach(tarea => {
-                        if (y > 270) { doc.addPage(); y = 20; }
-                        doc.setFont('Lato', 'bold');
-                        doc.setFontSize(12);
-                        doc.setTextColor('#191919');
-                        doc.text(`• Tarea: ${tarea.titulo}`, margen + 5, y);
-                        y += 6;
-                        doc.setFontSize(10);
-                        doc.setTextColor('#555');
-                        let fechaFormateada = tarea.fecha ? new Date(tarea.fecha + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'No definida';
-                        doc.text(`  Fecha de Entrega: ${fechaFormateada}`, margen + 5, y);
-                        y += 7;
-                        doc.setFont('Lato', 'normal');
-                        doc.setFontSize(11);
-                        doc.setTextColor('#333');
-                        let textoAcuerdos = doc.splitTextToSize(`  Acuerdos: ${tarea.acuerdos}`, anchoPagina - (margen * 2) - 15);
-                        doc.text(textoAcuerdos, margen + 10, y);
-                        y += (textoAcuerdos.length * 5) + 8;
-                    });
+                
+                // --- Pie de página con numeración ---
+                const totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.setFont('Helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.setTextColor('#818181');
+                    doc.text(`Página ${i} de ${totalPages}`, doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: 'center' });
                 }
-                doc.save(`resumen-reunion-${meetingNumber}.pdf`);
+
+                doc.save(`minuta-reunion-${meetingNumber}.pdf`);
                 exportButton.disabled = false;
                 exportButton.textContent = 'Exportar PDF';
             });
         }
+        // ==================================================================
+        // ===== FIN DE LA FUNCIÓN PDF ACTUALIZADA ==========================
+        // ==================================================================
         
         document.querySelector('main').addEventListener('click', function(event) {
             const header = event.target.closest('.toggle-seccion, .toggle-header');
@@ -720,7 +852,9 @@
             const taskList = document.getElementById('modal-task-list');
             const startButton = document.getElementById('start-meeting-btn');
             taskList.innerHTML = '';
+            
             const todasLasTareas = agendaData.flatMap(seccion => seccion.tareas.map(tarea => ({ datos: tarea, categoriaOriginal: seccion.categoria })) );
+            
             todasLasTareas.forEach(tareaObj => {
                 const li = document.createElement('li');
                 const statusClass = getStatusClass(tareaObj.datos[1]);
@@ -759,7 +893,7 @@
                 document.getElementById('setup-modal').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
                 inicializarControles();
-                displayAgenda(agendaData, 0);
+                displayAgenda([], 0);
             }
         }
     </script>
