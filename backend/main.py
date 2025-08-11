@@ -1,6 +1,6 @@
 # main.py
 from flask import Flask, jsonify, send_from_directory
-from sheets_service import get_sheet_data
+from .sheets_service import get_sheet_data
 import os
 
 # --- Configuración de la App Flask ---
