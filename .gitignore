@@ -32,5 +32,5 @@ venv/
 Thumbs.db
 
 # Archivos de credenciales de Google
-!vercel.json
-*.json
+# Se ignora únicamente el archivo de credenciales específico en lugar de todos los .json
+minutero-468417-b2377b9ff977.json
